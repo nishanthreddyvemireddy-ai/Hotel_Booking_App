@@ -1,25 +1,14 @@
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const StayEaseApp());
-}
-
-class StayEaseApp extends StatelessWidget {
-  const StayEaseApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'StayEase',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
-      home: const MainNavigation(),
-    );
-  }
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => FavoritesProvider(),
+      child: const StayEaseApp(),
+    ),
+  );
 }
 
 class Hotel {
@@ -69,6 +58,40 @@ const List<Hotel> hotels = [
   ),
 ];
 
+// Provider manages favorite hotels and notifies listening widgets.
+class FavoritesProvider extends ChangeNotifier {
+  final Set<String> _favoriteNames = {};
+
+  bool isFavorite(Hotel hotel) => _favoriteNames.contains(hotel.name);
+
+  List<Hotel> get favoriteHotels =>
+      hotels.where((hotel) => _favoriteNames.contains(hotel.name)).toList();
+
+  void toggleFavorite(Hotel hotel) {
+    if (!_favoriteNames.add(hotel.name)) {
+      _favoriteNames.remove(hotel.name);
+    }
+    notifyListeners();
+  }
+}
+
+class StayEaseApp extends StatelessWidget {
+  const StayEaseApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'StayEase',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
+      ),
+      home: const MainNavigation(),
+    );
+  }
+}
+
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -93,30 +116,16 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
+          setState(() => selectedIndex = index);
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
+          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
           NavigationDestination(
             icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
             label: 'Favorites',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
     );
@@ -129,10 +138,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('StayEase'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('StayEase'), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -180,11 +186,7 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           children: [
             TextField(
-              onChanged: (value) {
-                setState(() {
-                  searchText = value;
-                });
-              },
+              onChanged: (value) => setState(() => searchText = value),
               decoration: InputDecoration(
                 hintText: 'Search by hotel or location',
                 prefixIcon: const Icon(Icons.search),
@@ -201,12 +203,11 @@ class _SearchPageState extends State<SearchPage> {
             const SizedBox(height: 8),
             Expanded(
               child: filteredHotels.isEmpty
-                  ? const Center(child: Text('No hotels found. Try another search.'))
+                  ? const Center(child: Text('No hotels found.'))
                   : ListView.builder(
                       itemCount: filteredHotels.length,
-                      itemBuilder: (context, index) {
-                        return HotelCard(hotel: filteredHotels[index]);
-                      },
+                      itemBuilder: (_, index) =>
+                          HotelCard(hotel: filteredHotels[index]),
                     ),
             ),
           ],
@@ -223,58 +224,56 @@ class HotelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isFavorite = context.select<FavoritesProvider, bool>(
+      (provider) => provider.isFavorite(hotel),
+    );
+
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
-              width: 70,
-              height: 70,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                hotel.icon,
-                size: 36,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              child: Icon(hotel.icon, size: 34),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     hotel.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 5),
                   Text(hotel.location),
-                  const SizedBox(height: 5),
                   Row(
                     children: [
-                      const Icon(Icons.star, size: 17, color: Colors.amber),
-                      const SizedBox(width: 4),
-                      Text(hotel.rating.toString()),
+                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                      Text(' ${hotel.rating}'),
                     ],
                   ),
-                  const SizedBox(height: 5),
                   Text(
                     '₹${hotel.price} / night',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+              icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: isFavorite ? Colors.red : null,
+              ),
+              onPressed: () =>
+                  context.read<FavoritesProvider>().toggleFavorite(hotel),
             ),
           ],
         ),
@@ -288,11 +287,18 @@ class FavoritesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final favoriteHotels = context.watch<FavoritesProvider>().favoriteHotels;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorites')),
-      body: const Center(
-        child: Text('Your favorite hotels will appear here.'),
-      ),
+      appBar: AppBar(title: const Text('Favorite Hotels')),
+      body: favoriteHotels.isEmpty
+          ? const Center(child: Text('No favorites yet. Tap a heart on a hotel.'))
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: favoriteHotels
+                  .map((hotel) => HotelCard(hotel: hotel))
+                  .toList(),
+            ),
     );
   }
 }
@@ -304,9 +310,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: const Center(
-        child: Icon(Icons.account_circle, size: 100),
-      ),
+      body: const Center(child: Icon(Icons.account_circle, size: 100)),
     );
   }
 }
