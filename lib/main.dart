@@ -1,36 +1,82 @@
+
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const HotelBookingApp());
+  runApp(const StayEaseApp());
 }
 
-class HotelBookingApp extends StatelessWidget {
-  const HotelBookingApp({super.key});
+class StayEaseApp extends StatelessWidget {
+  const StayEaseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'StayEase',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const MainNavigation(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class Hotel {
+  final String name;
+  final String location;
+  final double rating;
+  final int price;
+  final IconData icon;
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  const Hotel({
+    required this.name,
+    required this.location,
+    required this.rating,
+    required this.price,
+    required this.icon,
+  });
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+const List<Hotel> hotels = [
+  Hotel(
+    name: 'Taj Falaknuma Palace',
+    location: 'Hyderabad',
+    rating: 4.8,
+    price: 12500,
+    icon: Icons.castle,
+  ),
+  Hotel(
+    name: 'ITC Kohenur',
+    location: 'HITEC City, Hyderabad',
+    rating: 4.7,
+    price: 9800,
+    icon: Icons.apartment,
+  ),
+  Hotel(
+    name: 'Novotel Hyderabad',
+    location: 'Gachibowli, Hyderabad',
+    rating: 4.5,
+    price: 7200,
+    icon: Icons.hotel,
+  ),
+  Hotel(
+    name: 'Trident Hyderabad',
+    location: 'HITEC City, Hyderabad',
+    rating: 4.6,
+    price: 8900,
+    icon: Icons.business,
+  ),
+];
+
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
+
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
   int selectedIndex = 0;
 
   final List<Widget> pages = const [
@@ -62,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Search',
           ),
           NavigationDestination(
-            icon: Icon(Icons.favorite_border),
+            icon: Icon(Icons.favorite_outline),
             selectedIcon: Icon(Icons.favorite),
             label: 'Favorites',
           ),
@@ -82,110 +128,86 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('StayEase'),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Find your perfect stay',
+            style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text('Explore hotels for your next trip.'),
+          const SizedBox(height: 20),
+          const Text(
+            'Popular hotels',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          ...hotels.map((hotel) => HotelCard(hotel: hotel)),
+        ],
+      ),
+    );
+  }
+}
+
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  String searchText = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredHotels = hotels.where((hotel) {
+      final query = searchText.toLowerCase();
+      return hotel.name.toLowerCase().contains(query) ||
+          hotel.location.toLowerCase().contains(query);
+    }).toList();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Search Hotels')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Good morning 👋',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 5),
-            const Text(
-              'Find your perfect stay',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
             TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchText = value;
+                });
+              },
               decoration: InputDecoration(
-                hintText: 'Search hotels, cities...',
+                hintText: 'Search by hotel or location',
                 prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.indigo.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.location_on,
-                    color: Colors.indigo,
-                  ),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Location',
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
-                      Text(
-                        'Hyderabad, India',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Spacer(),
-                  Icon(Icons.keyboard_arrow_down),
-                ],
-              ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('${filteredHotels.length} hotels found'),
             ),
-
-            const SizedBox(height: 30),
-
-            const Text(
-              'Popular Hotels',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            HotelCard(
-              name: 'Taj Falaknuma Palace',
-              location: 'Hyderabad',
-              rating: '4.8',
-              price: '₹12,500',
-              icon: Icons.hotel,
-            ),
-
-            const SizedBox(height: 15),
-
-            HotelCard(
-              name: 'ITC Kohenur',
-              location: 'HITEC City',
-              rating: '4.7',
-              price: '₹9,800',
-              icon: Icons.apartment,
+            const SizedBox(height: 8),
+            Expanded(
+              child: filteredHotels.isEmpty
+                  ? const Center(child: Text('No hotels found. Try another search.'))
+                  : ListView.builder(
+                      itemCount: filteredHotels.length,
+                      itemBuilder: (context, index) {
+                        return HotelCard(hotel: filteredHotels[index]);
+                      },
+                    ),
             ),
           ],
         ),
@@ -195,108 +217,67 @@ class HomePage extends StatelessWidget {
 }
 
 class HotelCard extends StatelessWidget {
-  final String name;
-  final String location;
-  final String rating;
-  final String price;
-  final IconData icon;
+  final Hotel hotel;
 
-  const HotelCard({
-    super.key,
-    required this.name,
-    required this.location,
-    required this.rating,
-    required this.price,
-    required this.icon,
-  });
+  const HotelCard({super.key, required this.hotel});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      margin: const EdgeInsets.only(bottom: 14),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
-              width: 90,
-              height: 90,
+              width: 70,
+              height: 70,
               decoration: BoxDecoration(
-                color: Colors.indigo.shade100,
-                borderRadius: BorderRadius.circular(14),
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                icon,
-                size: 45,
-                color: Colors.indigo,
+                hotel.icon,
+                size: 36,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
-
-            const SizedBox(width: 15),
-
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    hotel.name,
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 5),
-
-                  Text(
-                    location,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
+                  Text(hotel.location),
+                  const SizedBox(height: 5),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.star,
-                        size: 18,
-                        color: Colors.amber,
-                      ),
+                      const Icon(Icons.star, size: 17, color: Colors.amber),
                       const SizedBox(width: 4),
-                      Text(rating),
-                      const Spacer(),
-                      Text(
-                        '$price/night',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(hotel.rating.toString()),
                     ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '₹${hotel.price} / night',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class SearchPage extends StatelessWidget {
-  const SearchPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Search Hotels',
-        style: TextStyle(fontSize: 24),
       ),
     );
   }
@@ -307,10 +288,10 @@ class FavoritesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Favorite Hotels',
-        style: TextStyle(fontSize: 24),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Favorites')),
+      body: const Center(
+        child: Text('Your favorite hotels will appear here.'),
       ),
     );
   }
@@ -321,10 +302,10 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'My Profile',
-        style: TextStyle(fontSize: 24),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: const Center(
+        child: Icon(Icons.account_circle, size: 100),
       ),
     );
   }
