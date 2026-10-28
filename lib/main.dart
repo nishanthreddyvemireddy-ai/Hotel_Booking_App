@@ -60,7 +60,7 @@ const List<Hotel> hotels = [
   ),
 ];
 
-// -------------------- PROVIDER STATE --------------------
+// -------------------- FAVORITES PROVIDER --------------------
 
 class FavoritesProvider extends ChangeNotifier {
   final Set<String> _favoriteNames = {};
@@ -76,7 +76,6 @@ class FavoritesProvider extends ChangeNotifier {
     } else {
       _favoriteNames.add(hotel.name);
     }
-
     notifyListeners();
   }
 }
@@ -95,9 +94,7 @@ class StayEaseApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
         scaffoldBackgroundColor: const Color(0xFFF5F6FA),
         appBarTheme: const AppBarTheme(
           backgroundColor: primaryColor,
@@ -135,7 +132,7 @@ class StayEaseApp extends StatelessWidget {
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -200,7 +197,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 }
 
-// -------------------- HOME SCREEN --------------------
+// -------------------- HOME PAGE --------------------
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -208,9 +205,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('StayEase'),
-      ),
+      appBar: AppBar(title: const Text('StayEase')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -229,17 +224,15 @@ class HomePage extends StatelessWidget {
             style: AppStyles.sectionTitle,
           ),
           const SizedBox(height: 14),
-          ...hotels.map(
-            (hotel) => HotelCard(hotel: hotel),
-          ),
-          const SizedBox(height: 8),
+          ...hotels.map((hotel) => HotelCard(hotel: hotel)),
           StayEaseButton(
-            text: 'Explore Hotels',
-            icon: Icons.explore,
+            text: 'Make a Booking Request',
+            icon: Icons.calendar_month,
             onPressed: () {
-              Navigator.of(context).push(
+              Navigator.push(
+                context,
                 MaterialPageRoute(
-                  builder: (_) => const AllHotelsPage(),
+                  builder: (_) => const BookingFormPage(),
                 ),
               );
             },
@@ -250,7 +243,7 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// -------------------- SEARCH SCREEN --------------------
+// -------------------- SEARCH PAGE --------------------
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -266,15 +259,12 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     final filteredHotels = hotels.where((hotel) {
       final query = searchText.toLowerCase();
-
       return hotel.name.toLowerCase().contains(query) ||
           hotel.location.toLowerCase().contains(query);
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search Hotels'),
-      ),
+      appBar: AppBar(title: const Text('Search Hotels')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -293,23 +283,16 @@ class _SearchPageState extends State<SearchPage> {
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                '${filteredHotels.length} hotels found',
-                style: AppStyles.subtitle,
-              ),
+              child: Text('${filteredHotels.length} hotels found'),
             ),
             const SizedBox(height: 12),
             Expanded(
               child: filteredHotels.isEmpty
-                  ? const Center(
-                      child: Text('No hotels found. Try another search.'),
-                    )
+                  ? const Center(child: Text('No hotels found.'))
                   : ListView.builder(
                       itemCount: filteredHotels.length,
                       itemBuilder: (context, index) {
-                        return HotelCard(
-                          hotel: filteredHotels[index],
-                        );
+                        return HotelCard(hotel: filteredHotels[index]);
                       },
                     ),
             ),
@@ -320,15 +303,12 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-// -------------------- REUSABLE HOTEL CARD --------------------
+// -------------------- CUSTOM HOTEL CARD --------------------
 
 class HotelCard extends StatelessWidget {
   final Hotel hotel;
 
-  const HotelCard({
-    super.key,
-    required this.hotel,
-  });
+  const HotelCard({super.key, required this.hotel});
 
   @override
   Widget build(BuildContext context) {
@@ -342,42 +322,31 @@ class HotelCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 68,
-              height: 68,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                hotel.icon,
-                size: 35,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              child: Icon(hotel.icon, size: 34),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    hotel.name,
-                    style: AppStyles.hotelName,
-                  ),
+                  Text(hotel.name, style: AppStyles.hotelName),
                   const SizedBox(height: 4),
-                  Text(
-                    hotel.location,
-                    style: AppStyles.subtitle,
-                  ),
+                  Text(hotel.location, style: AppStyles.subtitle),
                   const SizedBox(height: 5),
                   Row(
                     children: [
                       const Icon(
                         Icons.star,
-                        size: 18,
                         color: Colors.amber,
+                        size: 18,
                       ),
-                      const SizedBox(width: 4),
-                      Text('${hotel.rating}'),
+                      Text(' ${hotel.rating}'),
                     ],
                   ),
                   const SizedBox(height: 5),
@@ -389,13 +358,9 @@ class HotelCard extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: isFavorite
-                  ? 'Remove from favorites'
-                  : 'Add to favorites',
+              tooltip: isFavorite ? 'Remove favorite' : 'Add favorite',
               onPressed: () {
-                context
-                    .read<FavoritesProvider>()
-                    .toggleFavorite(hotel);
+                context.read<FavoritesProvider>().toggleFavorite(hotel);
               },
               icon: Icon(
                 isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -409,7 +374,7 @@ class HotelCard extends StatelessWidget {
   }
 }
 
-// -------------------- REUSABLE CUSTOM BUTTON --------------------
+// -------------------- CUSTOM BUTTON --------------------
 
 class StayEaseButton extends StatelessWidget {
   final String text;
@@ -433,7 +398,7 @@ class StayEaseButton extends StatelessWidget {
   }
 }
 
-// -------------------- REUSABLE TEXT STYLES --------------------
+// -------------------- CUSTOM TEXT STYLES --------------------
 
 class AppStyles {
   static const TextStyle heading = TextStyle(
@@ -463,28 +428,292 @@ class AppStyles {
   );
 }
 
-// -------------------- ALL HOTELS SCREEN --------------------
+// -------------------- BOOKING FORM: EXPERIMENT 7 --------------------
 
-class AllHotelsPage extends StatelessWidget {
-  const AllHotelsPage({super.key});
+class BookingFormPage extends StatefulWidget {
+  const BookingFormPage({super.key});
+
+  @override
+  State<BookingFormPage> createState() => _BookingFormPageState();
+}
+
+class _BookingFormPageState extends State<BookingFormPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+
+  String? _selectedHotel;
+  DateTime? _checkInDate;
+  int _guestCount = 1;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _chooseDate() async {
+    final today = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _checkInDate ?? today,
+      firstDate: DateTime(today.year, today.month, today.day),
+      lastDate: DateTime(today.year + 2, today.month, today.day),
+    );
+
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _checkInDate = pickedDate;
+      });
+    }
+  }
+
+  void _submitForm() {
+    final isValid = _formKey.currentState!.validate();
+
+    if (_checkInDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a check-in date.'),
+        ),
+      );
+      return;
+    }
+
+    if (!isValid) return;
+
+    final guestName = _nameController.text.trim();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Booking Request Submitted'),
+          content: Text(
+            'Thank you, $guestName!\n\n'
+            'Hotel: $_selectedHotel\n'
+            'Check-in: ${_checkInDate!.day}/'
+            '${_checkInDate!.month}/${_checkInDate!.year}\n'
+            'Guests: $_guestCount\n\n'
+            'This is a demo confirmation, not a real reservation.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Hotels'),
+        title: const Text('Hotel Booking Form'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: hotels.map((hotel) {
-          return HotelCard(hotel: hotel);
-        }).toList(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Plan Your Stay',
+                style: AppStyles.heading,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Enter your details to submit a booking request.',
+                style: AppStyles.subtitle,
+              ),
+              const SizedBox(height: 24),
+
+              // Guest name
+              TextFormField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your full name.';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Name must contain at least 3 characters.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Email
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email Address',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+                validator: (value) {
+                  final email = value?.trim() ?? '';
+                  final emailPattern =
+                      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+                  if (email.isEmpty) {
+                    return 'Please enter your email address.';
+                  }
+                  if (!emailPattern.hasMatch(email)) {
+                    return 'Please enter a valid email address.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Phone number
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                maxLength: 10,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                  counterText: '',
+                ),
+                validator: (value) {
+                  final phone = value?.trim() ?? '';
+
+                  if (phone.isEmpty) {
+                    return 'Please enter your phone number.';
+                  }
+                  if (!RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
+                    return 'Enter a valid 10-digit phone number.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Hotel dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedHotel,
+                decoration: const InputDecoration(
+                  labelText: 'Select Hotel',
+                  prefixIcon: Icon(Icons.hotel_outlined),
+                ),
+                items: hotels.map((hotel) {
+                  return DropdownMenuItem<String>(
+                    value: hotel.name,
+                    child: Text(
+                      hotel.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedHotel = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a hotel.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Check-in date
+              OutlinedButton.icon(
+                onPressed: _chooseDate,
+                icon: const Icon(Icons.calendar_month),
+                label: Text(
+                  _checkInDate == null
+                      ? 'Select Check-in Date'
+                      : 'Check-in: ${_checkInDate!.day}/'
+                          '${_checkInDate!.month}/'
+                          '${_checkInDate!.year}',
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Number of guests
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.people_outline),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Number of Guests',
+                          style: AppStyles.hotelName,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _guestCount > 1
+                            ? () {
+                                setState(() {
+                                  _guestCount--;
+                                });
+                              }
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                      Text(
+                        '$_guestCount',
+                        style: AppStyles.sectionTitle,
+                      ),
+                      IconButton(
+                        onPressed: _guestCount < 10
+                            ? () {
+                                setState(() {
+                                  _guestCount++;
+                                });
+                              }
+                            : null,
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Submit
+              StayEaseButton(
+                text: 'Submit Booking Request',
+                icon: Icons.check_circle_outline,
+                onPressed: _submitForm,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-// -------------------- FAVORITES SCREEN --------------------
+// -------------------- FAVORITES PAGE --------------------
 
 class FavoritesPage extends StatelessWidget {
   const FavoritesPage({super.key});
@@ -495,26 +724,22 @@ class FavoritesPage extends StatelessWidget {
         context.watch<FavoritesProvider>().favoriteHotels;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Favorite Hotels'),
-      ),
+      appBar: AppBar(title: const Text('Favorite Hotels')),
       body: favoriteHotels.isEmpty
           ? const Center(
-              child: Text(
-                'No favorites yet. Tap a heart on a hotel.',
-              ),
+              child: Text('No favorites yet. Tap a heart on a hotel.'),
             )
           : ListView(
               padding: const EdgeInsets.all(16),
-              children: favoriteHotels.map((hotel) {
-                return HotelCard(hotel: hotel);
-              }).toList(),
+              children: favoriteHotels
+                  .map((hotel) => HotelCard(hotel: hotel))
+                  .toList(),
             ),
     );
   }
 }
 
-// -------------------- PROFILE SCREEN --------------------
+// -------------------- PROFILE PAGE --------------------
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -522,43 +747,42 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
+      appBar: AppBar(title: const Text('Profile')),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircleAvatar(
-              radius: 48,
-              child: Icon(
-                Icons.person,
-                size: 55,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircleAvatar(
+                radius: 48,
+                child: Icon(Icons.person, size: 55),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Welcome to StayEase',
-              style: AppStyles.sectionTitle,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Your hotel booking companion',
-              style: AppStyles.subtitle,
-            ),
-            const SizedBox(height: 20),
-            StayEaseButton(
-              text: 'View Favorite Hotels',
-              icon: Icons.favorite,
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const FavoritesPage(),
-                  ),
-                );
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              const Text(
+                'Welcome to StayEase',
+                style: AppStyles.sectionTitle,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Your hotel booking companion',
+                style: AppStyles.subtitle,
+              ),
+              const SizedBox(height: 20),
+              StayEaseButton(
+                text: 'Make a Booking Request',
+                icon: Icons.calendar_month,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BookingFormPage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
