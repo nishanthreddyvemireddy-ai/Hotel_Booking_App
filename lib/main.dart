@@ -1,5 +1,8 @@
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 void main() {
@@ -14,125 +17,97 @@ void main() {
 class Hotel {
   final String name;
   final String location;
+  final double price;
   final double rating;
-  final int price;
-  final IconData icon;
+  final String image;
+  final int id;
 
   const Hotel({
     required this.name,
     required this.location,
-    required this.rating,
     required this.price,
-    required this.icon,
+    required this.rating,
+    required this.image,
+    required this.id,
   });
 }
 
-const List<Hotel> hotels = [
-  Hotel(
+final List<Hotel> hotels = [
+  const Hotel(
+    id: 1,
     name: 'Taj Falaknuma Palace',
     location: 'Hyderabad',
-    rating: 4.8,
-    price: 12500,
-    icon: Icons.castle,
+    price: 12000,
+    rating: 4.9,
+    image: 'https://picsum.photos/id/164/600/400',
   ),
-  Hotel(
+  const Hotel(
+    id: 2,
     name: 'ITC Kohenur',
     location: 'HITEC City, Hyderabad',
-    rating: 4.7,
-    price: 9800,
-    icon: Icons.apartment,
+    price: 8500,
+    rating: 4.8,
+    image: 'https://picsum.photos/id/1040/600/400',
   ),
-  Hotel(
+  const Hotel(
+    id: 3,
     name: 'Novotel Hyderabad',
-    location: 'Gachibowli, Hyderabad',
-    rating: 4.5,
-    price: 7200,
-    icon: Icons.hotel,
-  ),
-  Hotel(
-    name: 'Trident Hyderabad',
     location: 'HITEC City, Hyderabad',
-    rating: 4.6,
-    price: 8900,
-    icon: Icons.business,
+    price: 6500,
+    rating: 4.5,
+    image: 'https://picsum.photos/id/1018/600/400',
+  ),
+  const Hotel(
+    id: 4,
+    name: 'Trident Hyderabad',
+    location: 'Madhapur, Hyderabad',
+    price: 7800,
+    rating: 4.7,
+    image: 'https://picsum.photos/id/1031/600/400',
   ),
 ];
 
-// -------------------- FAVORITES PROVIDER --------------------
-
 class FavoritesProvider extends ChangeNotifier {
-  final Set<String> _favoriteNames = {};
+  final Set<int> _favorites = {};
 
-  bool isFavorite(Hotel hotel) => _favoriteNames.contains(hotel.name);
+  Set<int> get favorites => _favorites;
 
-  List<Hotel> get favoriteHotels =>
-      hotels.where((hotel) => _favoriteNames.contains(hotel.name)).toList();
+  bool isFavorite(int id) => _favorites.contains(id);
 
-  void toggleFavorite(Hotel hotel) {
-    if (!_favoriteNames.add(hotel.name)) {
-      _favoriteNames.remove(hotel.name);
+  void toggleFavorite(int id) {
+    if (!_favorites.add(id)) {
+      _favorites.remove(id);
     }
     notifyListeners();
   }
 }
-
-// -------------------- APP THEME --------------------
 
 class StayEaseApp extends StatelessWidget {
   const StayEaseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF3949AB);
-
     return MaterialApp(
       title: 'StayEase',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
-        scaffoldBackgroundColor: const Color(0xFFF5F6FA),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
         appBarTheme: const AppBarTheme(
-          backgroundColor: primaryColor,
+          backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
-          centerTitle: true,
-          elevation: 0,
+          centerTitle: false,
         ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 2,
-          margin: const EdgeInsets.only(bottom: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 13,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+        cardTheme: const CardThemeData(
+          elevation: 3,
+          margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
       ),
       home: const MainNavigation(),
     );
   }
 }
-
-// -------------------- NAVIGATION --------------------
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -146,7 +121,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> pages = const [
     HomePage(),
-    SearchPage(),
+    ApiPage(),
     FavoritesPage(),
     ProfilePage(),
   ];
@@ -154,7 +129,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[selectedIndex],
+      body: IndexedStack(index: selectedIndex, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
@@ -162,11 +137,15 @@ class _MainNavigationState extends State<MainNavigation> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: Icon(Icons.hotel_outlined),
+            selectedIcon: Icon(Icons.hotel),
+            label: 'Hotels',
           ),
-          NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+          NavigationDestination(
+            icon: Icon(Icons.cloud_download_outlined),
+            selectedIcon: Icon(Icons.cloud_download),
+            label: 'API Demo',
+          ),
           NavigationDestination(
             icon: Icon(Icons.favorite_outline),
             selectedIcon: Icon(Icons.favorite),
@@ -174,6 +153,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
@@ -181,8 +161,6 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
-
-// -------------------- HOME WITH FADE ANIMATION --------------------
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -192,60 +170,65 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool showHotels = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Start the fade animation after the first frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() => showHotels = true);
-      }
-    });
-  }
+  String search = '';
 
   @override
   Widget build(BuildContext context) {
+    final filteredHotels = hotels.where((hotel) {
+      return hotel.name.toLowerCase().contains(search.toLowerCase()) ||
+          hotel.location.toLowerCase().contains(search.toLowerCase());
+    }).toList();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('StayEase')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      appBar: AppBar(
+        title: const Text('StayEase Hotels'),
+        actions: [
+          IconButton(
+            tooltip: 'Book a hotel',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BookingPage()),
+            ),
+            icon: const Icon(Icons.calendar_month),
+          ),
+        ],
+      ),
+      body: Column(
         children: [
-          const Text(
-            'Find your perfect stay',
-            style: AppStyles.heading,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Explore comfortable hotels for your next trip.',
-            style: AppStyles.subtitle,
-          ),
-          const SizedBox(height: 24),
-          const Text('Popular Hotels', style: AppStyles.sectionTitle),
-          const SizedBox(height: 14),
-          AnimatedOpacity(
-            opacity: showHotels ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 900),
-            curve: Curves.easeIn,
-            child: Column(
-              children: hotels.map((hotel) {
-                return HotelCard(hotel: hotel);
-              }).toList(),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              onChanged: (value) => setState(() => search = value),
+              decoration: InputDecoration(
+                hintText: 'Search hotels or locations',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
             ),
           ),
-          StayEaseButton(
-            text: 'Make a Booking Request',
-            icon: Icons.calendar_month,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const BookingFormPage(),
-                ),
-              );
-            },
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Popular hotels',
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          Expanded(
+            child: filteredHotels.isEmpty
+                ? const Center(child: Text('No hotels found'))
+                : ListView.builder(
+                    itemCount: filteredHotels.length,
+                    itemBuilder: (context, index) {
+                      return HotelCard(hotel: filteredHotels[index]);
+                    },
+                  ),
           ),
         ],
       ),
@@ -253,54 +236,299 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// -------------------- SEARCH --------------------
+class HotelCard extends StatelessWidget {
+  final Hotel hotel;
 
-class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
-
-  @override
-  State<SearchPage> createState() => _SearchPageState();
-}
-
-class _SearchPageState extends State<SearchPage> {
-  String searchText = '';
+  const HotelCard({super.key, required this.hotel});
 
   @override
   Widget build(BuildContext context) {
-    final filteredHotels = hotels.where((hotel) {
-      final query = searchText.toLowerCase();
-      return hotel.name.toLowerCase().contains(query) ||
-          hotel.location.toLowerCase().contains(query);
-    }).toList();
+    final favorite = context.watch<FavoritesProvider>().isFavorite(hotel.id);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Search Hotels')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              onChanged: (value) => setState(() => searchText = value),
-              decoration: const InputDecoration(
-                hintText: 'Search by hotel or location',
-                prefixIcon: Icon(Icons.search),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Image.network(
+            hotel.image,
+            height: 170,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              height: 170,
+              color: Colors.teal.shade50,
+              child: const Center(
+                child: Icon(Icons.hotel, size: 60, color: Colors.teal),
               ),
             ),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text('${filteredHotels.length} hotels found'),
+          ),
+          ListTile(
+            title: Text(
+              hotel.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: filteredHotels.isEmpty
-                  ? const Center(child: Text('No hotels found.'))
-                  : ListView.builder(
-                      itemCount: filteredHotels.length,
-                      itemBuilder: (_, index) =>
-                          HotelCard(hotel: filteredHotels[index]),
+            subtitle: Text('${hotel.location}\n₹${hotel.price.toStringAsFixed(0)} / night'),
+            isThreeLine: true,
+            trailing: IconButton(
+              tooltip: 'Toggle favorite',
+              icon: Icon(
+                favorite ? Icons.favorite : Icons.favorite_border,
+                color: favorite ? Colors.red : null,
+              ),
+              onPressed: () => context
+                  .read<FavoritesProvider>()
+                  .toggleFavorite(hotel.id),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Row(
+              children: [
+                const Icon(Icons.star, color: Colors.amber),
+                const SizedBox(width: 5),
+                Text('${hotel.rating} rating'),
+                const Spacer(),
+                FilledButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookingPage(hotel: hotel),
                     ),
+                  ),
+                  child: const Text('Book now'),
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Experiment 9: Fetch REST API data and display it in the UI.
+class ApiPage extends StatefulWidget {
+  const ApiPage({super.key});
+
+  @override
+  State<ApiPage> createState() => _ApiPageState();
+}
+
+class _ApiPageState extends State<ApiPage> {
+  late Future<List<Map<String, dynamic>>> postsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    postsFuture = fetchPosts();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchPosts() async {
+    final response = await http.get(
+      Uri.parse('https://jsonplaceholder.typicode.com/posts?_limit=10'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+    }
+
+    throw Exception('Failed to load API data: ${response.statusCode}');
+  }
+
+  void retry() {
+    setState(() {
+      postsFuture = fetchPosts();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('REST API Demo'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh data',
+            onPressed: retry,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: postsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Fetching data from REST API...'),
+                ],
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_off, size: 55, color: Colors.red),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Could not load API data.',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: retry,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try again'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final posts = snapshot.data ?? [];
+
+          if (posts.isEmpty) {
+            return const Center(child: Text('No API data available.'));
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(12),
+            children: [
+              Card(
+                color: Colors.teal.shade50,
+                child: const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Live REST API Request',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Data is requested from JSONPlaceholder and displayed below.',
+                      ),
+                      SizedBox(height: 8),
+                      SelectableText(
+                        'GET https://jsonplaceholder.typicode.com/posts',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  '${posts.length} posts fetched successfully',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ...posts.map((post) {
+                return Card(
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      child: Text('${post['id']}'),
+                    ),
+                    title: Text(
+                      '${post['title']}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text('${post['body']}'),
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              }),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class FavoritesPage extends StatelessWidget {
+  const FavoritesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<FavoritesProvider>();
+    final favoriteHotels = hotels
+        .where((hotel) => provider.isFavorite(hotel.id))
+        .toList();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Favorite Hotels')),
+      body: favoriteHotels.isEmpty
+          ? const Center(
+              child: Text(
+                'No favorites yet.\nAdd hotels using the heart icon.',
+                textAlign: TextAlign.center,
+              ),
+            )
+          : ListView.builder(
+              itemCount: favoriteHotels.length,
+              itemBuilder: (context, index) {
+                return HotelCard(hotel: favoriteHotels[index]);
+              },
+            ),
+    );
+  }
+}
+
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 42,
+              child: Icon(Icons.person, size: 48),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'StayEase Guest',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('Welcome to StayEase!'),
           ],
         ),
       ),
@@ -308,250 +536,75 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-// -------------------- ANIMATED HOTEL CARD --------------------
+class BookingPage extends StatefulWidget {
+  final Hotel? hotel;
 
-class HotelCard extends StatefulWidget {
-  final Hotel hotel;
-
-  const HotelCard({super.key, required this.hotel});
+  const BookingPage({super.key, this.hotel});
 
   @override
-  State<HotelCard> createState() => _HotelCardState();
+  State<BookingPage> createState() => _BookingPageState();
 }
 
-class _HotelCardState extends State<HotelCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<Offset> _slideAnimation;
-  late final Animation<double> _fadeAnimation;
+class _BookingPageState extends State<BookingPage> {
+  final formKey = GlobalKey<FormState>();
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+
+  String? selectedHotel;
+  DateTime? checkInDate;
+  int guests = 1;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
-
-    _controller.forward();
+    selectedHotel = widget.hotel?.name;
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    nameController.dispose();
+    emailController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final hotel = widget.hotel;
-
-    final isFavorite = context.select<FavoritesProvider, bool>(
-      (provider) => provider.isFavorite(hotel),
-    );
-
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(hotel.icon, size: 34),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(hotel.name, style: AppStyles.hotelName),
-                      const SizedBox(height: 4),
-                      Text(hotel.location, style: AppStyles.subtitle),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 18,
-                          ),
-                          Text(' ${hotel.rating}'),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        '₹${hotel.price} / night',
-                        style: AppStyles.price,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    context.read<FavoritesProvider>().toggleFavorite(hotel);
-                  },
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.red : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// -------------------- CUSTOM BUTTON --------------------
-
-class StayEaseButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-  final IconData icon;
-
-  const StayEaseButton({
-    super.key,
-    required this.text,
-    required this.onPressed,
-    this.icon = Icons.arrow_forward,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(text),
-    );
-  }
-}
-
-// -------------------- TEXT STYLES --------------------
-
-class AppStyles {
-  static const TextStyle heading = TextStyle(
-    fontSize: 26,
-    fontWeight: FontWeight.bold,
-  );
-
-  static const TextStyle sectionTitle = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-  );
-
-  static const TextStyle subtitle = TextStyle(
-    fontSize: 14,
-    color: Colors.blueGrey,
-  );
-
-  static const TextStyle hotelName = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.bold,
-  );
-
-  static const TextStyle price = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.bold,
-    color: Color(0xFF3949AB),
-  );
-}
-
-// -------------------- BOOKING FORM --------------------
-
-class BookingFormPage extends StatefulWidget {
-  const BookingFormPage({super.key});
-
-  @override
-  State<BookingFormPage> createState() => _BookingFormPageState();
-}
-
-class _BookingFormPageState extends State<BookingFormPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-
-  String? _selectedHotel;
-  DateTime? _checkInDate;
-  int _guestCount = 1;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _chooseDate() async {
-    final today = DateTime.now();
-
-    final pickedDate = await showDatePicker(
+  Future<void> chooseDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
       context: context,
-      initialDate: _checkInDate ?? today,
-      firstDate: DateTime(today.year, today.month, today.day),
-      lastDate: DateTime(today.year + 2, today.month, today.day),
+      initialDate: checkInDate ?? now.add(const Duration(days: 1)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
     );
 
-    if (pickedDate != null && mounted) {
-      setState(() => _checkInDate = pickedDate);
+    if (picked != null) {
+      setState(() => checkInDate = picked);
     }
   }
 
-  void _submitForm() {
-    final valid = _formKey.currentState!.validate();
+  void submitBooking() {
+    if (!formKey.currentState!.validate()) return;
 
-    if (_checkInDate == null) {
+    if (checkInDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a check-in date.')),
+        const SnackBar(content: Text('Please select a check-in date')),
       );
       return;
     }
 
-    if (!valid) return;
-
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Booking Request Submitted'),
+      builder: (context) => AlertDialog(
+        title: const Text('Booking submitted'),
         content: Text(
-          'Thank you, ${_nameController.text.trim()}!\n\n'
-          'Hotel: $_selectedHotel\n'
-          'Check-in: ${_checkInDate!.day}/${_checkInDate!.month}/'
-          '${_checkInDate!.year}\n'
-          'Guests: $_guestCount\n\n'
-          'Demo confirmation only; no real reservation was made.',
+          'Guest: ${nameController.text}\n'
+          'Hotel: $selectedHotel\n'
+          'Guests: $guests\n'
+          'Check-in: ${checkInDate!.day}/${checkInDate!.month}/${checkInDate!.year}\n\n'
+          'This is a demo booking. No real reservation was made.',
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
         ],
@@ -566,158 +619,104 @@ class _BookingFormPageState extends State<BookingFormPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
-          key: _formKey,
+          key: formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Plan Your Stay', style: AppStyles.heading),
+              const Text(
+                'Book your stay',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 20),
               TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Full Name'),
-                validator: (value) {
-                  if (value == null || value.trim().length < 3) {
-                    return 'Enter a name with at least 3 characters.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email Address'),
-                validator: (value) {
-                  final email = value?.trim() ?? '';
-                  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                      .hasMatch(email)) {
-                    return 'Enter a valid email address.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                maxLength: 10,
+                controller: nameController,
                 decoration: const InputDecoration(
-                  labelText: '10-digit Phone Number',
-                  counterText: '',
+                  labelText: 'Guest name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Enter your name'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email address',
+                  border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (!RegExp(r'^[0-9]{10}$').hasMatch(value?.trim() ?? '')) {
-                    return 'Enter a valid 10-digit phone number.';
+                  if (value == null ||
+                      !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                          .hasMatch(value.trim())) {
+                    return 'Enter a valid email address';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedHotel,
-                decoration: const InputDecoration(labelText: 'Select Hotel'),
-                items: hotels.map((hotel) {
-                  return DropdownMenuItem<String>(
-                    value: hotel.name,
-                    child: Text(
-                      hotel.name,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedHotel = value),
+                value: selectedHotel,
+                decoration: const InputDecoration(
+                  labelText: 'Select hotel',
+                  border: OutlineInputBorder(),
+                ),
+                items: hotels
+                    .map(
+                      (hotel) => DropdownMenuItem(
+                        value: hotel.name,
+                        child: Text(
+                          hotel.name,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(() => selectedHotel = value),
                 validator: (value) =>
-                    value == null ? 'Please select a hotel.' : null,
+                    value == null ? 'Select a hotel' : null,
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
-                onPressed: _chooseDate,
+                onPressed: chooseDate,
                 icon: const Icon(Icons.calendar_month),
                 label: Text(
-                  _checkInDate == null
-                      ? 'Select Check-in Date'
-                      : 'Check-in: ${_checkInDate!.day}/'
-                          '${_checkInDate!.month}/${_checkInDate!.year}',
+                  checkInDate == null
+                      ? 'Choose check-in date'
+                      : 'Check-in: ${checkInDate!.day}/${checkInDate!.month}/${checkInDate!.year}',
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  const Expanded(child: Text('Number of Guests')),
+                  const Text('Guests', style: TextStyle(fontSize: 16)),
+                  const Spacer(),
                   IconButton(
-                    onPressed: _guestCount > 1
-                        ? () => setState(() => _guestCount--)
+                    onPressed: guests > 1
+                        ? () => setState(() => guests--)
                         : null,
                     icon: const Icon(Icons.remove_circle_outline),
                   ),
-                  Text('$_guestCount'),
+                  Text('$guests'),
                   IconButton(
-                    onPressed: _guestCount < 10
-                        ? () => setState(() => _guestCount++)
+                    onPressed: guests < 10
+                        ? () => setState(() => guests++)
                         : null,
                     icon: const Icon(Icons.add_circle_outline),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              StayEaseButton(
-                text: 'Submit Booking Request',
-                icon: Icons.check_circle_outline,
-                onPressed: _submitForm,
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: submitBooking,
+                child: const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: Text('Submit booking'),
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// -------------------- FAVORITES PAGE --------------------
-
-class FavoritesPage extends StatelessWidget {
-  const FavoritesPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final favoriteHotels =
-        context.watch<FavoritesProvider>().favoriteHotels;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Favorite Hotels')),
-      body: favoriteHotels.isEmpty
-          ? const Center(child: Text('No favorites yet.'))
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: favoriteHotels.map((hotel) {
-                return HotelCard(hotel: hotel);
-              }).toList(),
-            ),
-    );
-  }
-}
-
-// -------------------- PROFILE PAGE --------------------
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: Center(
-        child: StayEaseButton(
-          text: 'Make a Booking Request',
-          icon: Icons.calendar_month,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const BookingFormPage(),
-              ),
-            );
-          },
         ),
       ),
     );
