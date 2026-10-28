@@ -11,8 +11,6 @@ void main() {
   );
 }
 
-// -------------------- HOTEL MODEL --------------------
-
 class Hotel {
   final String name;
   final String location;
@@ -71,10 +69,8 @@ class FavoritesProvider extends ChangeNotifier {
       hotels.where((hotel) => _favoriteNames.contains(hotel.name)).toList();
 
   void toggleFavorite(Hotel hotel) {
-    if (_favoriteNames.contains(hotel.name)) {
+    if (!_favoriteNames.add(hotel.name)) {
       _favoriteNames.remove(hotel.name);
-    } else {
-      _favoriteNames.add(hotel.name);
     }
     notifyListeners();
   }
@@ -101,11 +97,6 @@ class StayEaseApp extends StatelessWidget {
           foregroundColor: Colors.white,
           centerTitle: true,
           elevation: 0,
-          titleTextStyle: TextStyle(
-            fontSize: 21,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
         ),
         cardTheme: CardThemeData(
           color: Colors.white,
@@ -167,9 +158,7 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
+          setState(() => selectedIndex = index);
         },
         destinations: const [
           NavigationDestination(
@@ -177,10 +166,7 @@ class _MainNavigationState extends State<MainNavigation> {
             selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
+          NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
           NavigationDestination(
             icon: Icon(Icons.favorite_outline),
             selectedIcon: Icon(Icons.favorite),
@@ -188,7 +174,6 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
@@ -197,10 +182,29 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 }
 
-// -------------------- HOME PAGE --------------------
+// -------------------- HOME WITH FADE ANIMATION --------------------
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool showHotels = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Start the fade animation after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => showHotels = true);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -219,12 +223,18 @@ class HomePage extends StatelessWidget {
             style: AppStyles.subtitle,
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Popular Hotels',
-            style: AppStyles.sectionTitle,
-          ),
+          const Text('Popular Hotels', style: AppStyles.sectionTitle),
           const SizedBox(height: 14),
-          ...hotels.map((hotel) => HotelCard(hotel: hotel)),
+          AnimatedOpacity(
+            opacity: showHotels ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeIn,
+            child: Column(
+              children: hotels.map((hotel) {
+                return HotelCard(hotel: hotel);
+              }).toList(),
+            ),
+          ),
           StayEaseButton(
             text: 'Make a Booking Request',
             icon: Icons.calendar_month,
@@ -243,7 +253,7 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// -------------------- SEARCH PAGE --------------------
+// -------------------- SEARCH --------------------
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -270,11 +280,7 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           children: [
             TextField(
-              onChanged: (value) {
-                setState(() {
-                  searchText = value;
-                });
-              },
+              onChanged: (value) => setState(() => searchText = value),
               decoration: const InputDecoration(
                 hintText: 'Search by hotel or location',
                 prefixIcon: Icon(Icons.search),
@@ -291,9 +297,8 @@ class _SearchPageState extends State<SearchPage> {
                   ? const Center(child: Text('No hotels found.'))
                   : ListView.builder(
                       itemCount: filteredHotels.length,
-                      itemBuilder: (context, index) {
-                        return HotelCard(hotel: filteredHotels[index]);
-                      },
+                      itemBuilder: (_, index) =>
+                          HotelCard(hotel: filteredHotels[index]),
                     ),
             ),
           ],
@@ -303,71 +308,118 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-// -------------------- CUSTOM HOTEL CARD --------------------
+// -------------------- ANIMATED HOTEL CARD --------------------
 
-class HotelCard extends StatelessWidget {
+class HotelCard extends StatefulWidget {
   final Hotel hotel;
 
   const HotelCard({super.key, required this.hotel});
 
   @override
+  State<HotelCard> createState() => _HotelCardState();
+}
+
+class _HotelCardState extends State<HotelCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slideAnimation;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hotel = widget.hotel;
+
     final isFavorite = context.select<FavoritesProvider, bool>(
       (provider) => provider.isFavorite(hotel),
     );
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(hotel.icon, size: 34),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(hotel.name, style: AppStyles.hotelName),
-                  const SizedBox(height: 4),
-                  Text(hotel.location, style: AppStyles.subtitle),
-                  const SizedBox(height: 5),
-                  Row(
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(hotel.icon, size: 34),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                        size: 18,
+                      Text(hotel.name, style: AppStyles.hotelName),
+                      const SizedBox(height: 4),
+                      Text(hotel.location, style: AppStyles.subtitle),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                            size: 18,
+                          ),
+                          Text(' ${hotel.rating}'),
+                        ],
                       ),
-                      Text(' ${hotel.rating}'),
+                      const SizedBox(height: 5),
+                      Text(
+                        '₹${hotel.price} / night',
+                        style: AppStyles.price,
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '₹${hotel.price} / night',
-                    style: AppStyles.price,
+                ),
+                IconButton(
+                  onPressed: () {
+                    context.read<FavoritesProvider>().toggleFavorite(hotel);
+                  },
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : null,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            IconButton(
-              tooltip: isFavorite ? 'Remove favorite' : 'Add favorite',
-              onPressed: () {
-                context.read<FavoritesProvider>().toggleFavorite(hotel);
-              },
-              icon: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : null,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -398,7 +450,7 @@ class StayEaseButton extends StatelessWidget {
   }
 }
 
-// -------------------- CUSTOM TEXT STYLES --------------------
+// -------------------- TEXT STYLES --------------------
 
 class AppStyles {
   static const TextStyle heading = TextStyle(
@@ -428,7 +480,7 @@ class AppStyles {
   );
 }
 
-// -------------------- BOOKING FORM: EXPERIMENT 7 --------------------
+// -------------------- BOOKING FORM --------------------
 
 class BookingFormPage extends StatefulWidget {
   const BookingFormPage({super.key});
@@ -439,7 +491,6 @@ class BookingFormPage extends StatefulWidget {
 
 class _BookingFormPageState extends State<BookingFormPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -467,61 +518,51 @@ class _BookingFormPageState extends State<BookingFormPage> {
     );
 
     if (pickedDate != null && mounted) {
-      setState(() {
-        _checkInDate = pickedDate;
-      });
+      setState(() => _checkInDate = pickedDate);
     }
   }
 
   void _submitForm() {
-    final isValid = _formKey.currentState!.validate();
+    final valid = _formKey.currentState!.validate();
 
     if (_checkInDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a check-in date.'),
-        ),
+        const SnackBar(content: Text('Please select a check-in date.')),
       );
       return;
     }
 
-    if (!isValid) return;
-
-    final guestName = _nameController.text.trim();
+    if (!valid) return;
 
     showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Booking Request Submitted'),
-          content: Text(
-            'Thank you, $guestName!\n\n'
-            'Hotel: $_selectedHotel\n'
-            'Check-in: ${_checkInDate!.day}/'
-            '${_checkInDate!.month}/${_checkInDate!.year}\n'
-            'Guests: $_guestCount\n\n'
-            'This is a demo confirmation, not a real reservation.',
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Booking Request Submitted'),
+        content: Text(
+          'Thank you, ${_nameController.text.trim()}!\n\n'
+          'Hotel: $_selectedHotel\n'
+          'Check-in: ${_checkInDate!.day}/${_checkInDate!.month}/'
+          '${_checkInDate!.year}\n'
+          'Guests: $_guestCount\n\n'
+          'Demo confirmation only; no real reservation was made.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.pop(context);
+            },
+            child: const Text('OK'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                Navigator.pop(context);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hotel Booking Form'),
-      ),
+      appBar: AppBar(title: const Text('Hotel Booking Form')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -529,92 +570,52 @@ class _BookingFormPageState extends State<BookingFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Plan Your Stay',
-                style: AppStyles.heading,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Enter your details to submit a booking request.',
-                style: AppStyles.subtitle,
-              ),
-              const SizedBox(height: 24),
-
-              // Guest name
+              const Text('Plan Your Stay', style: AppStyles.heading),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
+                decoration: const InputDecoration(labelText: 'Full Name'),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your full name.';
-                  }
-                  if (value.trim().length < 3) {
-                    return 'Name must contain at least 3 characters.';
+                  if (value == null || value.trim().length < 3) {
+                    return 'Enter a name with at least 3 characters.';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-
-              // Email
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
+                decoration: const InputDecoration(labelText: 'Email Address'),
                 validator: (value) {
                   final email = value?.trim() ?? '';
-                  final emailPattern =
-                      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
-                  if (email.isEmpty) {
-                    return 'Please enter your email address.';
-                  }
-                  if (!emailPattern.hasMatch(email)) {
-                    return 'Please enter a valid email address.';
+                  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                      .hasMatch(email)) {
+                    return 'Enter a valid email address.';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-
-              // Phone number
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 maxLength: 10,
                 decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: Icon(Icons.phone_outlined),
+                  labelText: '10-digit Phone Number',
                   counterText: '',
                 ),
                 validator: (value) {
-                  final phone = value?.trim() ?? '';
-
-                  if (phone.isEmpty) {
-                    return 'Please enter your phone number.';
-                  }
-                  if (!RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
+                  if (!RegExp(r'^[0-9]{10}$').hasMatch(value?.trim() ?? '')) {
                     return 'Enter a valid 10-digit phone number.';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-
-              // Hotel dropdown
               DropdownButtonFormField<String>(
                 value: _selectedHotel,
-                decoration: const InputDecoration(
-                  labelText: 'Select Hotel',
-                  prefixIcon: Icon(Icons.hotel_outlined),
-                ),
+                decoration: const InputDecoration(labelText: 'Select Hotel'),
                 items: hotels.map((hotel) {
                   return DropdownMenuItem<String>(
                     value: hotel.name,
@@ -624,21 +625,11 @@ class _BookingFormPageState extends State<BookingFormPage> {
                     ),
                   );
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedHotel = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a hotel.';
-                  }
-                  return null;
-                },
+                onChanged: (value) => setState(() => _selectedHotel = value),
+                validator: (value) =>
+                    value == null ? 'Please select a hotel.' : null,
               ),
-              const SizedBox(height: 20),
-
-              // Check-in date
+              const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: _chooseDate,
                 icon: const Icon(Icons.calendar_month),
@@ -646,60 +637,29 @@ class _BookingFormPageState extends State<BookingFormPage> {
                   _checkInDate == null
                       ? 'Select Check-in Date'
                       : 'Check-in: ${_checkInDate!.day}/'
-                          '${_checkInDate!.month}/'
-                          '${_checkInDate!.year}',
+                          '${_checkInDate!.month}/${_checkInDate!.year}',
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Number of guests
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Expanded(child: Text('Number of Guests')),
+                  IconButton(
+                    onPressed: _guestCount > 1
+                        ? () => setState(() => _guestCount--)
+                        : null,
+                    icon: const Icon(Icons.remove_circle_outline),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.people_outline),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Number of Guests',
-                          style: AppStyles.hotelName,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _guestCount > 1
-                            ? () {
-                                setState(() {
-                                  _guestCount--;
-                                });
-                              }
-                            : null,
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
-                      Text(
-                        '$_guestCount',
-                        style: AppStyles.sectionTitle,
-                      ),
-                      IconButton(
-                        onPressed: _guestCount < 10
-                            ? () {
-                                setState(() {
-                                  _guestCount++;
-                                });
-                              }
-                            : null,
-                        icon: const Icon(Icons.add_circle_outline),
-                      ),
-                    ],
+                  Text('$_guestCount'),
+                  IconButton(
+                    onPressed: _guestCount < 10
+                        ? () => setState(() => _guestCount++)
+                        : null,
+                    icon: const Icon(Icons.add_circle_outline),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 24),
-
-              // Submit
               StayEaseButton(
                 text: 'Submit Booking Request',
                 icon: Icons.check_circle_outline,
@@ -726,14 +686,12 @@ class FavoritesPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Favorite Hotels')),
       body: favoriteHotels.isEmpty
-          ? const Center(
-              child: Text('No favorites yet. Tap a heart on a hotel.'),
-            )
+          ? const Center(child: Text('No favorites yet.'))
           : ListView(
               padding: const EdgeInsets.all(16),
-              children: favoriteHotels
-                  .map((hotel) => HotelCard(hotel: hotel))
-                  .toList(),
+              children: favoriteHotels.map((hotel) {
+                return HotelCard(hotel: hotel);
+              }).toList(),
             ),
     );
   }
@@ -749,40 +707,17 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircleAvatar(
-                radius: 48,
-                child: Icon(Icons.person, size: 55),
+        child: StayEaseButton(
+          text: 'Make a Booking Request',
+          icon: Icons.calendar_month,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const BookingFormPage(),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Welcome to StayEase',
-                style: AppStyles.sectionTitle,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your hotel booking companion',
-                style: AppStyles.subtitle,
-              ),
-              const SizedBox(height: 20),
-              StayEaseButton(
-                text: 'Make a Booking Request',
-                icon: Icons.calendar_month,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const BookingFormPage(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
