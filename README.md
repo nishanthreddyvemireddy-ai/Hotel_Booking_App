@@ -1,17 +1,70 @@
-# hotel_booking_app
+# StayEase - Hotel Booking App
 
-A new Flutter project.
+A modern, responsive Flutter application for discovering and booking luxury hotel stays in Hyderabad, featuring Provider-based state management, REST API integration, smooth animations, and form validation.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 📱 App Screenshots
 
-A few resources to get you started if this is your first Flutter project:
+### 1. Home & Popular Hotels
+Browse popular hotels with real-time pricing, ratings, and instant booking options.
+![StayEase Home - Popular Hotels](screenshots/01_home_hotels.png)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+### 2. Hotel Booking Form
+Interactive booking form with guest validation, date picker, and guest count controls.
+![Hotel Booking Form](screenshots/02_booking_form.png)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 3. REST API Integration
+Live demonstration of async REST API data fetching and state handling.
+![REST API Demo](screenshots/03_rest_api_demo.png)
+
+### 4. Favorites Screen
+Stateful favorite hotels management powered by Flutter Provider.
+![Favorite Hotels](screenshots/04_favorite_hotels.png)
+
+### 5. Profile Screen
+User profile view with custom navigation bar styling.
+![User Profile](screenshots/05_profile.png)
+
+---
+
+## ✨ Features
+
+- **Hotel Discovery**: Explore top luxury hotels with images, locations, ratings, and pricing.
+- **Booking Management**: Interactive booking form with field validation, date selection, and guest counters.
+- **Favorites System**: Bookmark preferred hotels with persistent state using `Provider` (`ChangeNotifier`).
+- **REST API Demo**: Asynchronous network fetching and error/loading handling.
+- **Animations**: Fluid slide and fade animations between views.
+- **Modern UI**: Clean Material 3 design with a teal-themed palette.
+- **Widget Testing**: Unit and widget test suite for validating core components.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) (v3.0.0 or higher)
+- [Dart SDK](https://dart.dev/get-dart)
+
+### Installation & Run
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/nishanthreddyvemireddy-ai/Hotel_Booking_App.git
+   cd Hotel_Booking_App
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Run the application:**
+   ```bash
+   flutter run
+   ```
+
+4. **Run tests:**
+   ```bash
+   flutter test
+   ```
