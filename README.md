@@ -137,9 +137,6 @@ class Hotel {
 
 The example demonstrates Dart classes, constructors, variables, and object-oriented programming concepts used to represent hotel information.
 
-**Screenshot Evidence:**
-
-![Experiment 1: Flutter SDK and Dart Basics](screenshots/exp01_sdk_and_dart_basics.png)
 
 **Result:**
 
@@ -187,10 +184,6 @@ Column(
 )
 ```
 
-**Screenshot Evidence:**
-
-![Experiment 2: Widgets and Layouts](screenshots/exp02_widgets_and_layouts.png)
-
 **Result:**
 
 Successfully demonstrated Flutter widgets and layout structures through the hotel information and booking interfaces.
@@ -231,9 +224,6 @@ LayoutBuilder(
 )
 ```
 
-**Screenshot Evidence:**
-
-![Experiment 3: Responsive UI](screenshots/exp03_responsive_ui.png)
 
 **Result:**
 
@@ -269,10 +259,6 @@ Navigator.push(
   ),
 );
 ```
-
-**Screenshot Evidence:**
-
-![Experiment 4: Navigation](screenshots/exp04_navigation.png)
 
 **Result:**
 
@@ -317,9 +303,6 @@ class FavoriteProvider extends ChangeNotifier {
 
 The Provider class demonstrates how application state can be updated and how listeners can be notified when favourite hotel information changes.
 
-**Screenshot Evidence:**
-
-![Experiment 5: State Management](screenshots/exp05_state_management.png)
 
 **Result:**
 
@@ -371,9 +354,6 @@ Card(
 )
 ```
 
-**Screenshot Evidence:**
-
-![Experiment 6: Custom Widgets and Themes](screenshots/exp06_custom_widgets_themes.png)
 
 **Result:**
 
@@ -422,9 +402,6 @@ Form(
 )
 ```
 
-**Screenshot Evidence:**
-
-![Experiment 7: Forms and Validation](screenshots/exp07_forms_and_validation.png)
 
 **Result:**
 
@@ -461,10 +438,6 @@ SlideTransition(
   ),
 )
 ```
-
-**Screenshot Evidence:**
-
-![Experiment 8: Fade and Slide Animations](screenshots/exp08_animations.png)
 
 **Result:**
 
@@ -509,10 +482,6 @@ Future<dynamic> fetchHotelData() async {
 }
 ```
 
-**Screenshot Evidence:**
-
-![Experiment 9: REST API Integration](screenshots/exp09_rest_api_integration.png)
-
 **Result:**
 
 Successfully demonstrated REST API integration, asynchronous network communication, and response handling.
@@ -543,10 +512,6 @@ Successfully demonstrated REST API integration, asynchronous network communicati
 flutter analyze
 flutter test
 ```
-
-**Screenshot Evidence:**
-
-![Experiment 10: Testing and Debugging](screenshots/exp10_testing_debugging.png)
 
 **Result:**
 
