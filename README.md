@@ -139,7 +139,7 @@ The example demonstrates Dart classes, constructors, variables, and object-orien
 
 **Screenshot Evidence:**
 
-![Experiment 1: Flutter SDK and Dart Basics](screenshots/01_home_hotels)
+![Experiment 1: Flutter SDK and Dart Basics](screenshots/exp01_sdk_and_dart_basics.png)
 
 **Result:**
 
